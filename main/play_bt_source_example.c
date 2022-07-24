@@ -167,7 +167,10 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     }
     return;
 }
-
+#define PIN_NUM_MISO 19
+#define PIN_NUM_MOSI 21
+#define PIN_NUM_CLK  22
+#define PIN_NUM_CS   20
 void app_main(void)
 {
     audio_pipeline_handle_t pipeline;
@@ -190,7 +193,9 @@ void app_main(void)
 
     esp_err_t ret;
 
-
+    // Options for mounting the filesystem.
+    // If format_if_mount_failed is set to true, SD card will be partitioned and
+    // formatted in case when mounting fails.
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
             .format_if_mount_failed = false,
             .max_files = 5,
@@ -201,15 +206,30 @@ void app_main(void)
     ESP_LOGI(TAG, "Initializing SD card");
 
 
-    ESP_LOGI(TAG, "Using SDMMC peripheral");
-    sdmmc_host_t host = SDMMC_HOST_DEFAULT();
 
-    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    slot_config.width = 4;
-    slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    spi_bus_config_t bus_cfg = {
+            .mosi_io_num = PIN_NUM_MOSI,
+            .miso_io_num = PIN_NUM_MISO,
+            .sclk_io_num = PIN_NUM_CLK,
+            .quadwp_io_num = -1,
+            .quadhd_io_num = -1,
+            .max_transfer_sz = 4000,
+    };
+    ret = spi_bus_initialize(host.slot, &bus_cfg, 1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize bus.");
+        return;
+    }
+
+    // This initializes the slot without card detect (CD) and write protect (WP) signals.
+    // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
+    sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    slot_config.gpio_cs = PIN_NUM_CS;
+    slot_config.host_id = host.slot;
 
     ESP_LOGI(TAG, "Mounting filesystem");
-    ret = esp_vfs_fat_sdmmc_mount(mount_point, &host, &slot_config, &mount_config, &card);
+    ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
 
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
@@ -219,16 +239,18 @@ void app_main(void)
             ESP_LOGE(TAG, "Failed to initialize the card (%s). "
                           "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
         }
-
+        return;
     }
     ESP_LOGI(TAG, "Filesystem mounted");
 
-
+    // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
 
+//    return;
+
     ESP_LOGI(TAG, "[ 2 ] Start codec chip");
-    audio_board_handle_t board_handle = audio_board_init();
-    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
+//    audio_board_handle_t board_handle = audio_board_init();
+//    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
 
     ESP_LOGI(TAG, "[3.0] Create audio pipeline for playback");
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
