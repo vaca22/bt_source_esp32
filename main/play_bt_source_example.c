@@ -263,7 +263,7 @@ void app_main(void)
     esp_bt_gap_register_callback(bt_app_gap_cb);
 
     const char *remote_name = NULL;
-    remote_name = CONFIG_BT_REMOTE_NAME;
+    remote_name = "H8";
     if (remote_name) {
         memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
     } else {
@@ -307,8 +307,7 @@ void app_main(void)
     ESP_LOGI(TAG, "[4.1] Listening event from all elements of pipeline");
     audio_pipeline_set_listener(pipeline, evt);
 
-    ESP_LOGI(TAG, "[4.2] Listening event from peripherals");
-    audio_event_iface_set_listener(esp_periph_set_get_event_iface(set), evt);
+
 
     ESP_LOGI(TAG, "[ 5 ] Start audio_pipeline");
     audio_pipeline_run(pipeline);
