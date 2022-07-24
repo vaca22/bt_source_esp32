@@ -131,7 +131,7 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # Example Configuration
 #
-CONFIG_BT_REMOTE_NAME="ESP_SINK_STREAM_DEMO"
+CONFIG_BT_REMOTE_NAME="H8"
 # end of Example Configuration
 
 #

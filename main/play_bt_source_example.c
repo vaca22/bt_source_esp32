@@ -254,7 +254,7 @@ void app_main(void)
     esp_bt_pin_code_t pin_code = {'1', '2', '3', '4'};
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
     ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
-    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT));
+    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BTDM));
     ESP_ERROR_CHECK(esp_bluedroid_init());
     ESP_ERROR_CHECK(esp_bluedroid_enable());
 
@@ -370,5 +370,5 @@ void app_main(void)
     esp_bluedroid_deinit();
     esp_bt_controller_disable();
     esp_bt_controller_deinit();
-    esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    esp_bt_controller_mem_release(ESP_BT_MODE_BTDM);
 }
