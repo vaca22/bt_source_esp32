@@ -208,6 +208,7 @@ void app_main(void)
 
 
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+
     spi_bus_config_t bus_cfg = {
             .mosi_io_num = PIN_NUM_MOSI,
             .miso_io_num = PIN_NUM_MISO,
@@ -222,8 +223,8 @@ void app_main(void)
         return;
     }
 
-    // This initializes the slot without card detect (CD) and write protect (WP) signals.
-    // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
+
+
     sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
     slot_config.gpio_cs = PIN_NUM_CS;
     slot_config.host_id = host.slot;
@@ -246,11 +247,6 @@ void app_main(void)
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
 
-//    return;
-
-    ESP_LOGI(TAG, "[ 2 ] Start codec chip");
-//    audio_board_handle_t board_handle = audio_board_init();
-//    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
 
     ESP_LOGI(TAG, "[3.0] Create audio pipeline for playback");
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
