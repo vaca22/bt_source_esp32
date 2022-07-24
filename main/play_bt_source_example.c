@@ -185,12 +185,9 @@ void app_main(void)
     }
 
     ESP_LOGI(TAG, "[ 1 ] Mount sdcard");
-    // Initialize peripherals management
-    esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
-    esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
 
-    // Initialize SD Card peripheral
-    audio_board_sdcard_init(set, SD_MODE_4_LINE);
+
+
     esp_err_t ret;
 
 
@@ -294,11 +291,9 @@ void app_main(void)
     ESP_LOGI(TAG, "[3.6] Set up  uri (file as fatfs_stream, mp3 as mp3 decoder, and default output is i2s)");
     audio_element_set_uri(fatfs_stream_reader, "/sdcard/test.mp3");
 
-    ESP_LOGI(TAG, "[3.7] Create bt peripheral");
-    esp_periph_handle_t bt_periph = bt_create_periph();
 
-    ESP_LOGI(TAG, "[3.8] Start bt peripheral");
-    esp_periph_start(set, bt_periph);
+
+
 
     ESP_LOGI(TAG, "[ 4 ] Set up  event listener");
     audio_event_iface_cfg_t evt_cfg = AUDIO_EVENT_IFACE_DEFAULT_CFG();
@@ -314,31 +309,8 @@ void app_main(void)
 
     ESP_LOGI(TAG, "[ 6 ] Listen for all pipeline events");
     while (1) {
-        audio_event_iface_msg_t msg;
-        esp_err_t ret = audio_event_iface_listen(evt, &msg, portMAX_DELAY);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "[ * ] Event interface error : %d", ret);
-            continue;
-        }
+        vTaskDelay(100);
 
-        if (msg.source_type == AUDIO_ELEMENT_TYPE_ELEMENT
-            && msg.source == (void *) mp3_decoder
-            && msg.cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
-            audio_element_info_t music_info = {0};
-            audio_element_getinfo(mp3_decoder, &music_info);
-
-            ESP_LOGI(TAG, "[ * ] Receive music info from mp3 decoder, sample_rates=%d, bits=%d, ch=%d",
-                     music_info.sample_rates, music_info.bits, music_info.channels);
-            continue;
-        }
-        if (msg.source_type == PERIPH_ID_BLUETOOTH
-            && msg.source == (void *)bt_periph) {
-            if ((msg.cmd == PERIPH_BLUETOOTH_DISCONNECTED) || (msg.cmd == PERIPH_BLUETOOTH_AUDIO_SUSPENDED)) {
-                ESP_LOGW(TAG, "[ * ] Bluetooth disconnected or suspended");
-                periph_bt_stop(bt_periph);
-                break;
-            }
-        }
     }
 
     ESP_LOGI(TAG, "[ 7 ] Stop audio_pipeline");
@@ -349,9 +321,7 @@ void app_main(void)
     /* Terminal the pipeline before removing the listener */
     audio_pipeline_remove_listener(pipeline);
 
-    /* Stop all periph before removing the listener */
-    esp_periph_set_stop_all(set);
-    audio_event_iface_remove_listener(esp_periph_set_get_event_iface(set), evt);
+
 
     /* Make sure audio_pipeline_remove_listener & audio_event_iface_remove_listener are called before destroying event_iface */
     audio_event_iface_destroy(evt);
@@ -364,7 +334,7 @@ void app_main(void)
     audio_element_deinit(bt_stream_writer);
     audio_element_deinit(fatfs_stream_reader);
     audio_element_deinit(mp3_decoder);
-    esp_periph_set_destroy(set);
+//    esp_periph_set_destroy(set);
     esp_bluedroid_disable();
     esp_bluedroid_deinit();
     esp_bt_controller_disable();
