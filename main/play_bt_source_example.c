@@ -167,10 +167,10 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     }
     return;
 }
-#define PIN_NUM_MISO 19
-#define PIN_NUM_MOSI 21
-#define PIN_NUM_CLK  22
-#define PIN_NUM_CS   20
+#define PIN_NUM_MISO 2
+#define PIN_NUM_MOSI 15
+#define PIN_NUM_CLK  14
+#define PIN_NUM_CS   13
 void app_main(void)
 {
     audio_pipeline_handle_t pipeline;
@@ -197,7 +197,7 @@ void app_main(void)
     // If format_if_mount_failed is set to true, SD card will be partitioned and
     // formatted in case when mounting fails.
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-            .format_if_mount_failed = false,
+            .format_if_mount_failed = true,
             .max_files = 5,
             .allocation_unit_size = 16 * 1024
     };
@@ -307,7 +307,7 @@ void app_main(void)
     audio_pipeline_link(pipeline, &link_tag[0], 3);
 
     ESP_LOGI(TAG, "[3.6] Set up  uri (file as fatfs_stream, mp3 as mp3 decoder, and default output is i2s)");
-    audio_element_set_uri(fatfs_stream_reader, "/sdcard/test.mp3");
+    audio_element_set_uri(fatfs_stream_reader, "/sdcard/Speak Now/Taylor Swift - Back to December.mp3");
 
 
 
