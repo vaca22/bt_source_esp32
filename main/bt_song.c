@@ -24,13 +24,13 @@
 
 
 
-#define BT_CONNECT_TIMEOUT      20000
+
 
 typedef uint8_t esp_peer_bdname_t[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
 
 static const char *TAG = "BLUETOOTH_SOURCE_EXAMPLE";
 static esp_peer_bdname_t remote_bt_device_name;
-bool wantConnect=true;
+static bool wantConnect=false;
 static bool device_found = false;
 static esp_bd_addr_t remote_bd_addr = {0};
 
@@ -41,6 +41,8 @@ audio_element_handle_t fatfs_stream_reader, bt_stream_writer, mp3_decoder;
 esp_periph_set_handle_t set;
 audio_event_iface_handle_t evt;
 bt_scan_callback myScanCallback=NULL;
+esp_periph_handle_t bt_periph;
+
 
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
 {
@@ -124,8 +126,12 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
     if (eir) {
         get_name_from_eir(eir, (uint8_t *)&peer_bdname, NULL);
         if(wantConnect==false){
+            ESP_LOGE("fuck","false");
             return;
+        }else{
+            ESP_LOGE("fuck","true");
         }
+        ESP_LOGE("fuck","%s",remote_bt_device_name);
         if (strcmp((char *)peer_bdname, (char *)remote_bt_device_name) != 0) {
             return;
         }
@@ -273,7 +279,7 @@ void bt_scan(bt_scan_callback callback){
 
     ESP_LOGI(TAG, "[3.6] Set up  uri (file as fatfs_stream, mp3 as mp3 decoder, and default output is i2s)");
 
-    esp_periph_handle_t bt_periph = bt_create_periph();
+    bt_periph = bt_create_periph();
 
     ESP_LOGI(TAG, "[3.8] Start bt peripheral");
     esp_periph_start(set, bt_periph);
@@ -294,8 +300,8 @@ void bt_scan(bt_scan_callback callback){
 
 void bt_connect(char * remote_name){
     memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
+    ESP_LOGE("gaga","fuck");
     wantConnect=true;
-
 }
 
 
@@ -309,34 +315,32 @@ void bt_play_song(char* song_path){
 
     ESP_LOGI(TAG, "[ 6 ] Listen for all pipeline events");
     while (1) {
-//        audio_event_iface_msg_t msg;
-//        esp_err_t ret = audio_event_iface_listen(evt, &msg, portMAX_DELAY);
-//        if (ret != ESP_OK) {
-//            ESP_LOGE(TAG, "[ * ] Event interface error : %d", ret);
-//            continue;
-//        }
-//
-//        if (msg.source_type == AUDIO_ELEMENT_TYPE_ELEMENT
-//            && msg.source == (void *) mp3_decoder
-//            && msg.cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
-//            audio_element_info_t music_info = {0};
-//            audio_element_getinfo(mp3_decoder, &music_info);
-//
-//            ESP_LOGI(TAG, "[ * ] Receive music info from mp3 decoder, sample_rates=%d, bits=%d, ch=%d",
-//                     music_info.sample_rates, music_info.bits, music_info.channels);
-//            continue;
-//        }
-//        if (msg.source_type == PERIPH_ID_BLUETOOTH
-//            && msg.source == (void *)bt_periph) {
-//            if ((msg.cmd == PERIPH_BLUETOOTH_DISCONNECTED) || (msg.cmd == PERIPH_BLUETOOTH_AUDIO_SUSPENDED)) {
-//                ESP_LOGE(TAG, "[ * ] Bluetooth disconnected or suspended");
-//                ESP_LOGE("fuck","gaga2222");
-//                periph_bt_stop(bt_periph);
-//                break;
-//            }
-//        }
-        vTaskDelay(200);
+        audio_event_iface_msg_t msg;
+        esp_err_t ret = audio_event_iface_listen(evt, &msg, portMAX_DELAY);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "[ * ] Event interface error : %d", ret);
+            continue;
+        }
 
+        if (msg.source_type == AUDIO_ELEMENT_TYPE_ELEMENT
+            && msg.source == (void *) mp3_decoder
+            && msg.cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
+            audio_element_info_t music_info = {0};
+            audio_element_getinfo(mp3_decoder, &music_info);
+
+            ESP_LOGI(TAG, "[ * ] Receive music info from mp3 decoder, sample_rates=%d, bits=%d, ch=%d",
+                     music_info.sample_rates, music_info.bits, music_info.channels);
+            continue;
+        }
+        if (msg.source_type == PERIPH_ID_BLUETOOTH
+            && msg.source == (void *)bt_periph) {
+            if ((msg.cmd == PERIPH_BLUETOOTH_DISCONNECTED) || (msg.cmd == PERIPH_BLUETOOTH_AUDIO_SUSPENDED)) {
+                ESP_LOGE(TAG, "[ * ] Bluetooth disconnected or suspended");
+                ESP_LOGE("fuck","gaga2222");
+                periph_bt_stop(bt_periph);
+                break;
+            }
+        }
     }
 
     ESP_LOGI(TAG, "[ 7 ] Stop audio_pipeline");
