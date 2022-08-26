@@ -349,7 +349,8 @@ void app_main(void)
         if (msg.source_type == PERIPH_ID_BLUETOOTH
             && msg.source == (void *)bt_periph) {
             if ((msg.cmd == PERIPH_BLUETOOTH_DISCONNECTED) || (msg.cmd == PERIPH_BLUETOOTH_AUDIO_SUSPENDED)) {
-                ESP_LOGW(TAG, "[ * ] Bluetooth disconnected or suspended");
+                ESP_LOGE(TAG, "[ * ] Bluetooth disconnected or suspended");
+                ESP_LOGE("fuck","gaga2222");
                 periph_bt_stop(bt_periph);
                 break;
             }
