@@ -185,6 +185,41 @@ void bt_init(){
 }
 
 void bt_scan(bt_scan_callback callback){
+
+
+
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
+    set = esp_periph_set_init(&periph_cfg);
+
+
+    audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
+    pipeline = audio_pipeline_init(&pipeline_cfg);
+    mem_assert(pipeline);
+
+
+    fatfs_stream_cfg_t fatfs_cfg = FATFS_STREAM_CFG_DEFAULT();
+    fatfs_cfg.type = AUDIO_STREAM_READER;
+    fatfs_stream_reader = fatfs_stream_init(&fatfs_cfg);
+
+
+    mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
+    mp3_decoder = mp3_decoder_init(&mp3_cfg);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     myScanCallback=callback;
     wantConnect=false;
     remote_bt_device_name[0]='\0';
@@ -211,39 +246,22 @@ void bt_scan(bt_scan_callback callback){
 
     esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
 
-}
 
 
 
-void bt_connect(char * remote_name){
-    memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
-    wantConnect=true;
-
-}
 
 
 
-void bt_play_song(char* song_path){
-    esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
-    set = esp_periph_set_init(&periph_cfg);
 
 
-    audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
-    pipeline = audio_pipeline_init(&pipeline_cfg);
-    mem_assert(pipeline);
 
 
-    fatfs_stream_cfg_t fatfs_cfg = FATFS_STREAM_CFG_DEFAULT();
-    fatfs_cfg.type = AUDIO_STREAM_READER;
-    fatfs_stream_reader = fatfs_stream_init(&fatfs_cfg);
 
 
-    mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
-    mp3_decoder = mp3_decoder_init(&mp3_cfg);
 
-    bt_scan(NULL);
-    bt_connect("H8");
-    ESP_LOGE("fuckyou","youyou");
+
+
+
 
     audio_pipeline_register(pipeline, fatfs_stream_reader, "file");
     audio_pipeline_register(pipeline, mp3_decoder, "mp3");
@@ -254,7 +272,6 @@ void bt_play_song(char* song_path){
     audio_pipeline_link(pipeline, &link_tag[0], 3);
 
     ESP_LOGI(TAG, "[3.6] Set up  uri (file as fatfs_stream, mp3 as mp3 decoder, and default output is i2s)");
-    audio_element_set_uri(fatfs_stream_reader, song_path);
 
     esp_periph_handle_t bt_periph = bt_create_periph();
 
@@ -271,7 +288,21 @@ void bt_play_song(char* song_path){
     audio_pipeline_set_listener(pipeline, evt);
 
     audio_event_iface_set_listener(esp_periph_set_get_event_iface(set), evt);
+}
 
+
+
+void bt_connect(char * remote_name){
+    memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
+    wantConnect=true;
+
+}
+
+
+
+void bt_play_song(char* song_path){
+
+    audio_element_set_uri(fatfs_stream_reader, song_path);
 
     ESP_LOGI(TAG, "[ 5 ] Start audio_pipeline");
     audio_pipeline_run(pipeline);

@@ -106,11 +106,12 @@ void app_main(void)
     sdmmc_card_print_info(stdout, card);
 
 //    bt_init();
-//    bt_scan(scan_callback);
+    bt_scan(scan_callback);
+
+    vTaskDelay(1000);
+//
+//
+    bt_connect("H8");
     bt_play_song("/sdcard/b.mp3");
-//    vTaskDelay(1000);
-//
-//
-//    bt_connect("H8");
     ESP_LOGE("fuck","gaga");
 }
