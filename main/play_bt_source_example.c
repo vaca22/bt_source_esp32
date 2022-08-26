@@ -30,6 +30,19 @@
 #define PIN_NUM_MOSI 15
 #define PIN_NUM_CLK  14
 #define PIN_NUM_CS   13
+
+
+
+
+
+
+void scan_callback(char* name){
+    ESP_LOGE("found","%s",name);
+}
+
+
+
+
 void app_main(void)
 {
 
@@ -92,7 +105,7 @@ void app_main(void)
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
 
-    bt_scan();
+    bt_scan(scan_callback);
 
     ESP_LOGE("fuck","gaga");
 }

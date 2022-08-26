@@ -39,7 +39,7 @@ audio_pipeline_handle_t pipeline;
 audio_element_handle_t fatfs_stream_reader, bt_stream_writer, mp3_decoder;
 esp_periph_set_handle_t set;
 audio_event_iface_handle_t evt;
-
+bt_scan_callback myScanCallback=NULL;
 
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
 {
@@ -100,16 +100,19 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
         switch (p->type) {
             case ESP_BT_GAP_DEV_PROP_COD:
                 cod = *(uint32_t *)(p->val);
-                ESP_LOGI(TAG, "--Class of Device: 0x%x", cod);
+//                ESP_LOGI(TAG, "--Class of Device: 0x%x", cod);
                 break;
             case ESP_BT_GAP_DEV_PROP_RSSI:
                 rssi = *(int8_t *)(p->val);
-                ESP_LOGI(TAG, "--RSSI: %d", rssi);
+//                ESP_LOGI(TAG, "--RSSI: %d", rssi);
                 break;
             case ESP_BT_GAP_DEV_PROP_EIR:
                 eir = (uint8_t *)(p->val);
                 get_name_from_eir(eir, (uint8_t *)&peer_bdname, NULL);
-                ESP_LOGI(TAG, "--Name: %s", peer_bdname);
+               // ESP_LOGI(TAG, "--Name: %s", peer_bdname);
+                if(myScanCallback){
+                    myScanCallback((char*)peer_bdname);
+                }
                 break;
             case ESP_BT_GAP_DEV_PROP_BDNAME:
             default:
@@ -299,7 +302,9 @@ void bt_init(){
     audio_pipeline_terminate(pipeline);
 }
 
-void bt_scan(){
+void bt_scan(bt_scan_callback callback){
+    myScanCallback=callback;
+    remote_bt_device_name[0]='\0';
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
     esp_bt_pin_code_t pin_code = {'1', '2', '3', '4'};
