@@ -105,7 +105,11 @@ void app_main(void)
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
 
+//    bt_init();
     bt_scan(scan_callback);
+
+    vTaskDelay(1000);
+    bt_connect("H8");
 
     ESP_LOGE("fuck","gaga");
 }

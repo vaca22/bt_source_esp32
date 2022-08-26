@@ -7,6 +7,11 @@
 
 
 typedef void(*bt_scan_callback)(char* name);
-void bt_scan(bt_scan_callback callback);
+
+
 void bt_init();
+void bt_scan(bt_scan_callback callback);
+void bt_connect(char * remote_name);
+
+
 #endif //BT_SOURCE_DEMO_BT_SONG_H

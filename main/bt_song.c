@@ -30,6 +30,7 @@ typedef uint8_t esp_peer_bdname_t[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
 
 static const char *TAG = "BLUETOOTH_SOURCE_EXAMPLE";
 static esp_peer_bdname_t remote_bt_device_name;
+bool wantConnect=true;
 static bool device_found = false;
 static esp_bd_addr_t remote_bd_addr = {0};
 
@@ -100,11 +101,10 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
         switch (p->type) {
             case ESP_BT_GAP_DEV_PROP_COD:
                 cod = *(uint32_t *)(p->val);
-//                ESP_LOGI(TAG, "--Class of Device: 0x%x", cod);
                 break;
             case ESP_BT_GAP_DEV_PROP_RSSI:
                 rssi = *(int8_t *)(p->val);
-//                ESP_LOGI(TAG, "--RSSI: %d", rssi);
+
                 break;
             case ESP_BT_GAP_DEV_PROP_EIR:
                 eir = (uint8_t *)(p->val);
@@ -120,10 +120,12 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
         }
     }
 
-    ESP_LOGI(TAG, "need device name %s", (uint8_t *)remote_bt_device_name);
-    /* search for device named "peer_bdname" in its extended inquiry response */
+
     if (eir) {
         get_name_from_eir(eir, (uint8_t *)&peer_bdname, NULL);
+        if(wantConnect==false){
+            return;
+        }
         if (strcmp((char *)peer_bdname, (char *)remote_bt_device_name) != 0) {
             return;
         }
@@ -215,11 +217,9 @@ void bt_init(){
 
     const char *remote_name = NULL;
     remote_name = "H8";
-    if (remote_name) {
-        memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
-    } else {
-        memcpy(&remote_bt_device_name, "ESP_SINK_STREAM_DEMO", ESP_BT_GAP_MAX_BDNAME_LEN);
-    }
+
+    memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
+
 
     a2dp_stream_config_t a2dp_config = {
             .type = AUDIO_STREAM_WRITER,
@@ -230,6 +230,7 @@ void bt_init(){
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
 
     esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+
 
 
 
@@ -289,7 +290,7 @@ void bt_init(){
             if ((msg.cmd == PERIPH_BLUETOOTH_DISCONNECTED) || (msg.cmd == PERIPH_BLUETOOTH_AUDIO_SUSPENDED)) {
                 ESP_LOGE(TAG, "[ * ] Bluetooth disconnected or suspended");
                 ESP_LOGE("fuck","gaga2222");
-                // periph_bt_stop(bt_periph);
+                 periph_bt_stop(bt_periph);
                 break;
             }
         }
@@ -304,6 +305,7 @@ void bt_init(){
 
 void bt_scan(bt_scan_callback callback){
     myScanCallback=callback;
+    wantConnect=false;
     remote_bt_device_name[0]='\0';
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
@@ -317,6 +319,13 @@ void bt_scan(bt_scan_callback callback){
     esp_bt_dev_set_device_name("ESP_SOURCE_STREAM_DEMO");
     esp_bt_gap_set_pin(pin_type, 4, pin_code);
     esp_bt_gap_register_callback(bt_app_gap_cb);
+
+    a2dp_stream_config_t a2dp_config = {
+            .type = AUDIO_STREAM_WRITER,
+            .user_callback = {0},
+    };
+    bt_stream_writer = a2dp_stream_init(&a2dp_config);
+
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
 
     esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
@@ -325,8 +334,13 @@ void bt_scan(bt_scan_callback callback){
 
 
 
-void bt_connect(){
+void bt_connect(char * remote_name){
+    memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
+    wantConnect=true;
+    esp_periph_handle_t bt_periph = bt_create_periph();
 
+    ESP_LOGI(TAG, "[3.8] Start bt peripheral");
+    esp_periph_start(set, bt_periph);
 }
 
 
