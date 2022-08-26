@@ -243,6 +243,7 @@ void bt_play_song(char* song_path){
 
     bt_scan(NULL);
     bt_connect("H8");
+    ESP_LOGE("fuckyou","youyou");
 
     audio_pipeline_register(pipeline, fatfs_stream_reader, "file");
     audio_pipeline_register(pipeline, mp3_decoder, "mp3");

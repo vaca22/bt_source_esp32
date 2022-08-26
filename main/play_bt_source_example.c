@@ -107,7 +107,7 @@ void app_main(void)
 
 //    bt_init();
 //    bt_scan(scan_callback);
-    bt_play_song("/sdcard/a.mp3");
+    bt_play_song("/sdcard/b.mp3");
 //    vTaskDelay(1000);
 //
 //
