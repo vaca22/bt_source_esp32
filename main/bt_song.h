@@ -4,5 +4,6 @@
 
 #ifndef BT_SOURCE_DEMO_BT_SONG_H
 #define BT_SOURCE_DEMO_BT_SONG_H
+void bt_scan();
 void bt_init();
 #endif //BT_SOURCE_DEMO_BT_SONG_H

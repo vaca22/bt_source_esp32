@@ -92,7 +92,7 @@ void app_main(void)
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
 
-    bt_init();
+    bt_scan();
 
     ESP_LOGE("fuck","gaga");
 }
