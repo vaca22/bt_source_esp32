@@ -193,9 +193,6 @@ void app_main(void)
 
     esp_err_t ret;
 
-    // Options for mounting the filesystem.
-    // If format_if_mount_failed is set to true, SD card will be partitioned and
-    // formatted in case when mounting fails.
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
             .format_if_mount_failed = true,
             .max_files = 5,
@@ -352,7 +349,6 @@ void app_main(void)
     audio_element_deinit(bt_stream_writer);
     audio_element_deinit(fatfs_stream_reader);
     audio_element_deinit(mp3_decoder);
-//    esp_periph_set_destroy(set);
     esp_bluedroid_disable();
     esp_bluedroid_deinit();
     esp_bt_controller_disable();
