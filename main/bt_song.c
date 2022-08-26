@@ -181,126 +181,7 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 }
 
 void bt_init(){
-    esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
-    set = esp_periph_set_init(&periph_cfg);
 
-
-    audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
-    pipeline = audio_pipeline_init(&pipeline_cfg);
-    mem_assert(pipeline);
-
-
-    fatfs_stream_cfg_t fatfs_cfg = FATFS_STREAM_CFG_DEFAULT();
-    fatfs_cfg.type = AUDIO_STREAM_READER;
-    fatfs_stream_reader = fatfs_stream_init(&fatfs_cfg);
-
-
-    mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
-    mp3_decoder = mp3_decoder_init(&mp3_cfg);
-
-
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
-    esp_bt_pin_code_t pin_code = {'1', '2', '3', '4'};
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
-    ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
-    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BTDM));
-    ESP_ERROR_CHECK(esp_bluedroid_init());
-    ESP_ERROR_CHECK(esp_bluedroid_enable());
-
-    esp_bt_dev_set_device_name("ESP_SOURCE_STREAM_DEMO");
-    esp_bt_gap_set_pin(pin_type, 4, pin_code);
-    esp_bt_gap_register_callback(bt_app_gap_cb);
-
-
-
-    const char *remote_name = NULL;
-    remote_name = "H8";
-
-    memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
-
-
-    a2dp_stream_config_t a2dp_config = {
-            .type = AUDIO_STREAM_WRITER,
-            .user_callback = {0},
-    };
-    bt_stream_writer = a2dp_stream_init(&a2dp_config);
-
-    esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
-
-    esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-
-
-
-
-    ESP_LOGI(TAG, "[3.4] Register all elements to audio pipeline");
-    audio_pipeline_register(pipeline, fatfs_stream_reader, "file");
-    audio_pipeline_register(pipeline, mp3_decoder, "mp3");
-    audio_pipeline_register(pipeline, bt_stream_writer, "bt");
-
-    ESP_LOGI(TAG, "[3.5] Link it together [sdcard]-->fatfs_stream-->mp3_decoder-->bt_stream-->[bt sink]");
-    const char *link_tag[3] = {"file", "mp3", "bt"};
-    audio_pipeline_link(pipeline, &link_tag[0], 3);
-
-    ESP_LOGI(TAG, "[3.6] Set up  uri (file as fatfs_stream, mp3 as mp3 decoder, and default output is i2s)");
-    audio_element_set_uri(fatfs_stream_reader, "/sdcard/a.mp3");
-
-    esp_periph_handle_t bt_periph = bt_create_periph();
-
-    ESP_LOGI(TAG, "[3.8] Start bt peripheral");
-    esp_periph_start(set, bt_periph);
-
-
-
-    ESP_LOGI(TAG, "[ 4 ] Set up  event listener");
-    audio_event_iface_cfg_t evt_cfg = AUDIO_EVENT_IFACE_DEFAULT_CFG();
-    evt = audio_event_iface_init(&evt_cfg);
-
-    ESP_LOGI(TAG, "[4.1] Listening event from all elements of pipeline");
-    audio_pipeline_set_listener(pipeline, evt);
-
-    audio_event_iface_set_listener(esp_periph_set_get_event_iface(set), evt);
-
-
-    ESP_LOGI(TAG, "[ 5 ] Start audio_pipeline");
-    audio_pipeline_run(pipeline);
-
-    ESP_LOGI(TAG, "[ 6 ] Listen for all pipeline events");
-    while (1) {
-        audio_event_iface_msg_t msg;
-        esp_err_t ret = audio_event_iface_listen(evt, &msg, portMAX_DELAY);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "[ * ] Event interface error : %d", ret);
-            continue;
-        }
-
-        if (msg.source_type == AUDIO_ELEMENT_TYPE_ELEMENT
-            && msg.source == (void *) mp3_decoder
-            && msg.cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
-            audio_element_info_t music_info = {0};
-            audio_element_getinfo(mp3_decoder, &music_info);
-
-            ESP_LOGI(TAG, "[ * ] Receive music info from mp3 decoder, sample_rates=%d, bits=%d, ch=%d",
-                     music_info.sample_rates, music_info.bits, music_info.channels);
-            continue;
-        }
-        if (msg.source_type == PERIPH_ID_BLUETOOTH
-            && msg.source == (void *)bt_periph) {
-            if ((msg.cmd == PERIPH_BLUETOOTH_DISCONNECTED) || (msg.cmd == PERIPH_BLUETOOTH_AUDIO_SUSPENDED)) {
-                ESP_LOGE(TAG, "[ * ] Bluetooth disconnected or suspended");
-                ESP_LOGE("fuck","gaga2222");
-                 periph_bt_stop(bt_periph);
-                break;
-            }
-        }
-
-    }
-
-    ESP_LOGI(TAG, "[ 7 ] Stop audio_pipeline");
-    audio_pipeline_stop(pipeline);
-    audio_pipeline_wait_for_stop(pipeline);
-    audio_pipeline_terminate(pipeline);
 }
 
 void bt_scan(bt_scan_callback callback){
@@ -337,16 +218,99 @@ void bt_scan(bt_scan_callback callback){
 void bt_connect(char * remote_name){
     memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
     wantConnect=true;
-    esp_periph_handle_t bt_periph = bt_create_periph();
 
-    ESP_LOGI(TAG, "[3.8] Start bt peripheral");
-    esp_periph_start(set, bt_periph);
 }
 
 
 
-void bt_play_song(){
+void bt_play_song(char* song_path){
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
+    set = esp_periph_set_init(&periph_cfg);
 
+
+    audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
+    pipeline = audio_pipeline_init(&pipeline_cfg);
+    mem_assert(pipeline);
+
+
+    fatfs_stream_cfg_t fatfs_cfg = FATFS_STREAM_CFG_DEFAULT();
+    fatfs_cfg.type = AUDIO_STREAM_READER;
+    fatfs_stream_reader = fatfs_stream_init(&fatfs_cfg);
+
+
+    mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
+    mp3_decoder = mp3_decoder_init(&mp3_cfg);
+
+    bt_scan(NULL);
+    bt_connect("H8");
+
+    audio_pipeline_register(pipeline, fatfs_stream_reader, "file");
+    audio_pipeline_register(pipeline, mp3_decoder, "mp3");
+    audio_pipeline_register(pipeline, bt_stream_writer, "bt");
+
+    ESP_LOGI(TAG, "[3.5] Link it together [sdcard]-->fatfs_stream-->mp3_decoder-->bt_stream-->[bt sink]");
+    const char *link_tag[3] = {"file", "mp3", "bt"};
+    audio_pipeline_link(pipeline, &link_tag[0], 3);
+
+    ESP_LOGI(TAG, "[3.6] Set up  uri (file as fatfs_stream, mp3 as mp3 decoder, and default output is i2s)");
+    audio_element_set_uri(fatfs_stream_reader, song_path);
+
+    esp_periph_handle_t bt_periph = bt_create_periph();
+
+    ESP_LOGI(TAG, "[3.8] Start bt peripheral");
+    esp_periph_start(set, bt_periph);
+
+
+
+    ESP_LOGI(TAG, "[ 4 ] Set up  event listener");
+    audio_event_iface_cfg_t evt_cfg = AUDIO_EVENT_IFACE_DEFAULT_CFG();
+    evt = audio_event_iface_init(&evt_cfg);
+
+    ESP_LOGI(TAG, "[4.1] Listening event from all elements of pipeline");
+    audio_pipeline_set_listener(pipeline, evt);
+
+    audio_event_iface_set_listener(esp_periph_set_get_event_iface(set), evt);
+
+
+    ESP_LOGI(TAG, "[ 5 ] Start audio_pipeline");
+    audio_pipeline_run(pipeline);
+
+    ESP_LOGI(TAG, "[ 6 ] Listen for all pipeline events");
+    while (1) {
+//        audio_event_iface_msg_t msg;
+//        esp_err_t ret = audio_event_iface_listen(evt, &msg, portMAX_DELAY);
+//        if (ret != ESP_OK) {
+//            ESP_LOGE(TAG, "[ * ] Event interface error : %d", ret);
+//            continue;
+//        }
+//
+//        if (msg.source_type == AUDIO_ELEMENT_TYPE_ELEMENT
+//            && msg.source == (void *) mp3_decoder
+//            && msg.cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
+//            audio_element_info_t music_info = {0};
+//            audio_element_getinfo(mp3_decoder, &music_info);
+//
+//            ESP_LOGI(TAG, "[ * ] Receive music info from mp3 decoder, sample_rates=%d, bits=%d, ch=%d",
+//                     music_info.sample_rates, music_info.bits, music_info.channels);
+//            continue;
+//        }
+//        if (msg.source_type == PERIPH_ID_BLUETOOTH
+//            && msg.source == (void *)bt_periph) {
+//            if ((msg.cmd == PERIPH_BLUETOOTH_DISCONNECTED) || (msg.cmd == PERIPH_BLUETOOTH_AUDIO_SUSPENDED)) {
+//                ESP_LOGE(TAG, "[ * ] Bluetooth disconnected or suspended");
+//                ESP_LOGE("fuck","gaga2222");
+//                periph_bt_stop(bt_periph);
+//                break;
+//            }
+//        }
+        vTaskDelay(200);
+
+    }
+
+    ESP_LOGI(TAG, "[ 7 ] Stop audio_pipeline");
+    audio_pipeline_stop(pipeline);
+    audio_pipeline_wait_for_stop(pipeline);
+    audio_pipeline_terminate(pipeline);
 }
 
 
