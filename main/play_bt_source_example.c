@@ -108,6 +108,9 @@ void app_main(void)
 
     bt_scan(scan_callback);
     bt_connect("H8");
+
+
+    vTaskDelay(1000);
     bt_play_song("/sdcard/b.mp3");
 
 

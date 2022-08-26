@@ -126,12 +126,12 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
     if (eir) {
         get_name_from_eir(eir, (uint8_t *)&peer_bdname, NULL);
         if(wantConnect==false){
-            ESP_LOGE("fuck","false");
+
             return;
         }else{
-            ESP_LOGE("fuck","true");
+
         }
-        ESP_LOGE("fuck","%s",remote_bt_device_name);
+
         if (strcmp((char *)peer_bdname, (char *)remote_bt_device_name) != 0) {
             return;
         }
@@ -300,7 +300,6 @@ void bt_scan(bt_scan_callback callback){
 
 void bt_connect(char * remote_name){
     memcpy(&remote_bt_device_name, remote_name, strlen(remote_name) + 1);
-    ESP_LOGE("gaga","fuck");
     wantConnect=true;
 }
 
@@ -336,7 +335,6 @@ void bt_play_song(char* song_path){
             && msg.source == (void *)bt_periph) {
             if ((msg.cmd == PERIPH_BLUETOOTH_DISCONNECTED) || (msg.cmd == PERIPH_BLUETOOTH_AUDIO_SUSPENDED)) {
                 ESP_LOGE(TAG, "[ * ] Bluetooth disconnected or suspended");
-                ESP_LOGE("fuck","gaga2222");
                 periph_bt_stop(bt_periph);
                 break;
             }
