@@ -107,6 +107,9 @@ void app_main(void)
 
 
     bt_scan(scan_callback);
+    vTaskDelay(1000);
+    vTaskDelay(1000);
+    vTaskDelay(1000);
     bt_connect("H8");
 
 

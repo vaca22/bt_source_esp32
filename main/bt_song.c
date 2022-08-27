@@ -160,8 +160,8 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
                     esp_a2d_source_connect(remote_bd_addr);
                 } else {
                     // not discovered, continue to discover
-                    ESP_LOGI(TAG, "Device discovery failed, continue to discover...");
-                    esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
+                    ESP_LOGE(TAG, "Device discovery failed, continue to discover...");
+                  //  esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
                 }
             } else if (param->disc_st_chg.state == ESP_BT_GAP_DISCOVERY_STARTED) {
                 ESP_LOGI(TAG, "Discovery started.");
